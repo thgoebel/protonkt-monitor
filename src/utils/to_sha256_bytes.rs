@@ -4,10 +4,10 @@ use thiserror::Error;
 // as_ vs to_ vs into_: https://stackoverflow.com/a/73861738/11076036
 
 pub trait ToSha256Bytes {
-    /// Parse what should be a 32 character hexadecimal string into a 32-byte byte array
+    /// Parse what should be a 64 character hexadecimal string into a 32-byte byte array
     /// and pretend it is a SHA-256 hash.
     ///
-    /// This fails if the input string is not hexadecimal or not exactly 32 characters.
+    /// This fails if the input string is not hexadecimal or not exactly 64 characters.
     fn to_sha256_bytes(self) -> Result<Sha256Bytes, ToSha256BytesError>;
 }
 
