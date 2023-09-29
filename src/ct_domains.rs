@@ -110,7 +110,7 @@ pub enum FindFullDomainError {
     ConflictingFullDomain,
 }
 
-/// Search through the names in the SAN
+/// Search through the names in the SAN for a match with `target`.
 ///
 /// This function only returns an error if something in the SAN conflicts with the target ShortDomain
 /// (e.g. contradicting chain hashes, or no chain hash at all).
