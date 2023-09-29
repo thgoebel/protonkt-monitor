@@ -42,6 +42,8 @@ pub enum GetCertsError {
     Deserialize(#[from] serde_json::Error),
     #[error("API specific error")]
     ApiError(String),
+    #[error("PEM decode failed: {0}")]
+    PemDecodeError(#[from] pem_rfc7468::Error),
 }
 
 /* ------- crt.sh ------- */
@@ -98,11 +100,14 @@ impl CtApi for CrtShApi {
             if response.status() != 200 {
                 return Err(GetCertsError::RequestNotSuccessful(url, response.status()));
             }
-            let body = response.bytes().await?;
+            let pem = response.bytes().await?;
+
+            let (label, der) = pem_rfc7468::decode_vec(&pem)?;
+            assert_eq!(label, "CERTIFICATE");
 
             certs.push(CtCert {
                 id: item.id.to_string(),
-                der: body.to_vec(),
+                der,
             })
         }
         return Ok(certs);
