@@ -8,17 +8,36 @@ use log::error;
 use serde::Deserialize;
 use serde_json;
 use thiserror::Error;
+use x509_parser::prelude::{FromDer, X509Certificate, X509Error};
 
 /* ------- TRAITS ------- */
 
+/// A certificate logged in Certificate Transparency (CT)
 #[derive(Debug)]
 pub struct CtCert {
     /// An id for this cert, assigned the CT scanning service (crt.sh/CertSpotter).
     /// Useful for debugging.
     pub id: String,
 
-    /// The actual certificate
+    /// The raw certificate bytes
     pub der: DerBytes,
+}
+
+impl CtCert {
+    pub fn from_der(id: String, der: DerBytes) -> Result<CtCert, X509Error> {
+        // check that the DER is parse-able
+        // we cannot (cleanly) store the x509 in the CtCert struct:
+        // https://stackoverflow.com/questions/32300132/why-cant-i-store-a-value-and-a-reference-to-that-value-in-the-same-struct
+        let (_, _x509) = X509Certificate::from_der(&der)?;
+        Ok(CtCert { id, der })
+    }
+
+    /// The parsed X.509 certificate parsed from the DerBytes
+    // XXX: This is not ideal because each cert is parsed from DER into X.509 multiple times. For now: clean code over performance.
+    pub fn x509<'a>(&'a self) -> X509Certificate<'a> {
+        let (_, x509) = X509Certificate::from_der(&self.der).expect("DER should be parseable");
+        return x509;
+    }
 }
 
 /// Interface to access Certificate Transparency (CT) logs.
@@ -42,8 +61,12 @@ pub enum GetCertsError {
     Deserialize(#[from] serde_json::Error),
     #[error("API specific error")]
     ApiError(String),
+    #[error("Base64 decode failed: {0}")]
+    Base64DecodeError(#[from] base64::DecodeError),
     #[error("PEM decode failed: {0}")]
     PemDecodeError(#[from] pem_rfc7468::Error),
+    #[error("X.509 decode failed: {0}")]
+    X509DecodeError(#[from] X509Error),
 }
 
 /* ------- crt.sh ------- */
@@ -105,10 +128,8 @@ impl CtApi for CrtShApi {
             let (label, der) = pem_rfc7468::decode_vec(&pem)?;
             assert_eq!(label, "CERTIFICATE");
 
-            certs.push(CtCert {
-                id: item.id.to_string(),
-                der,
-            })
+            let c = CtCert::from_der(item.id.to_string(), der)?;
+            certs.push(c);
         }
         return Ok(certs);
     }
@@ -202,17 +223,12 @@ impl CtApi for CertSpotterApi {
             }
         };
 
-        let certs: Vec<CtCert> = items
-            .into_iter()
-            .map(|i| (i.id, b64::STANDARD.decode(i.cert_der_b64)))
-            .filter_map(|(id, res)| match res {
-                Ok(der) => Some(CtCert { id, der }),
-                Err(e) => {
-                    error!("Failed decoding as base64: {:?}", e);
-                    None
-                }
-            })
-            .collect();
+        let mut certs: Vec<CtCert> = Vec::with_capacity(items.len());
+        for item in items {
+            let der = b64::STANDARD.decode(item.cert_der_b64)?;
+            let c = CtCert::from_der(item.id, der)?;
+            certs.push(c);
+        }
         Ok(certs)
     }
 }
