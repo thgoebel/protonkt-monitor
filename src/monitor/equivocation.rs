@@ -1,5 +1,6 @@
 use crate::ct_api::{CtApi, CtCert};
 use crate::ct_domains::{find_full_domain, FullDomain, ShortDomain};
+use crate::data::Data;
 use crate::proton_api::ProtonApi;
 use crate::utils::ToSha256Bytes;
 use crate::Sha256Bytes;
@@ -52,6 +53,7 @@ where
     /// Runs the equivocation monitor, starting at the given `from_epoch_id` and until the latest epoch.
     pub async fn run(
         &self,
+        data: &mut Data,
         from_epoch_id: u64,
         prev_from_chain_hash: Sha256Bytes,
     ) -> Result<(), Box<dyn Error>> {
@@ -156,6 +158,10 @@ where
             // Continue to next epoch
             prev_chain_hash = chain_hash;
             current_epoch += 1;
+
+            if current_epoch % 5 == 0 {
+                data.save()?;
+            }
         }
 
         info!(
@@ -171,6 +177,7 @@ where
                 current_epoch, current_not_before, now
             )
         }
+        data.save()?;
         Ok(())
     }
 

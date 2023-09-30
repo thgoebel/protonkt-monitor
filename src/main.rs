@@ -1,10 +1,13 @@
 use crate::ct_api::CrtShApi;
+use clap::Parser;
 use lazy_static::lazy_static;
 use log::{error, info};
-use std::{collections::HashMap, process::ExitCode};
+use std::{collections::HashMap, path::PathBuf, process::ExitCode};
+use utils::ToSha256Bytes;
 
 mod ct_api;
 mod ct_domains;
+mod data;
 mod monitor;
 mod proton_api;
 mod utils;
@@ -37,12 +40,36 @@ lazy_static! {
     ]);
 }
 
+#[derive(Debug, Parser)]
+#[command(version, about)]
+struct Cli {
+    /// Directory to persist monitoring data, and to read existing monitoring data from
+    data_dir: PathBuf,
+
+    /// Enable verbose logging
+    #[arg(short, long)]
+    verbose: bool,
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    let args = Cli::parse();
+
+    let log_level = if args.verbose { "debug" } else { "info" };
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_level)).init();
     info!("Running ProtonKT monitor...");
 
-    let from_epoch = 451;
+    // Load the cached data
+    let res = data::load_data(args.data_dir.clone());
+    let mut data = match res {
+        Ok(data) => data,
+        Err(e) => {
+            error!("Failed to load data: {}", e);
+            return ExitCode::FAILURE;
+        }
+    };
+
+    let from_epoch = 571;
     let prev_from_chain_hash = KNOWN_CHAIN_HASHES
         .get(&(from_epoch - 1))
         .expect(&format!("epoch {} not hardcoded", from_epoch - 1))
@@ -50,7 +77,14 @@ async fn main() -> ExitCode {
 
     let ct_api = CrtShApi::new();
     let monitor = monitor::equivocation::EquivocMonitor::new(ct_api);
-    let res = monitor.run(from_epoch, prev_from_chain_hash).await;
+    let res = monitor
+        .run(&mut data, from_epoch, prev_from_chain_hash)
+        .await;
+
+    if let Err(e) = data.save() {
+        error!("Failed to save data: {}", e);
+        return ExitCode::FAILURE;
+    }
 
     match res {
         Ok(_) => {

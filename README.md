@@ -7,7 +7,13 @@ Monitor Proton's Key Transparency. It monitors:
 
 ## Usage
 
-TODO
+```bash
+./protonkt-monitor /path/to/monitoring/data
+./protonkt-monitor --help
+```
+
+The `<data-dir>` is used to persist data across monitoring runs.
+This allows monitoring to pick up where it left off.
 
 ## License
 

@@ -14,9 +14,9 @@ pub trait ToSha256Bytes {
 /// Errors that can occur during [`to_sha256_bytes`].
 #[derive(Debug, Error)]
 pub enum ToSha256BytesError {
-    #[error("failed to decode hex to bytes")]
+    #[error("failed to decode hex to bytes: {0}")]
     HashHex(#[from] hex::FromHexError),
-    #[error("hash has an unexpected length")]
+    #[error("hash has an unexpected length ({0} bytes instead of 32)")]
     BadHashLength(usize),
 }
 
