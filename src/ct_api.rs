@@ -4,7 +4,7 @@
 use crate::{DerBytes, KT_BASE_DOMAIN, KT_VERSION};
 use async_trait::async_trait;
 use base64::{engine::general_purpose as b64, Engine as _};
-use log::error;
+use log::{debug, error};
 use serde::Deserialize;
 use serde_json;
 use thiserror::Error;
@@ -53,13 +53,13 @@ pub trait CtApi {
 /// The different errors that can occur during [`CtApi::get_certs_for_epoch`].
 #[derive(Error, Debug)]
 pub enum GetCertsError {
-    #[error("network request failed to create a response")]
+    #[error("network request failed to create a response: {0}")]
     NetworkError(#[from] reqwest::Error),
-    #[error("got a response but status code was")]
+    #[error("got a response but status code was {1} for url {0}")]
     RequestNotSuccessful(String, reqwest::StatusCode),
-    #[error("failed to deserialise the response")]
+    #[error("failed to deserialise the response: {0}")]
     Deserialize(#[from] serde_json::Error),
-    #[error("API specific error")]
+    #[error("API specific error: {0}")]
     ApiError(String),
     #[error("Base64 decode failed: {0}")]
     Base64DecodeError(#[from] base64::DecodeError),
@@ -99,6 +99,7 @@ impl CtApi for CrtShApi {
     async fn get_certs_for_epoch(&self, epoch_id: u64) -> Result<Vec<CtCert>, GetCertsError> {
         let search_domain = format!("epoch.{epoch_id}.{KT_VERSION}.{KT_BASE_DOMAIN}");
         let url = format!("https://crt.sh/?Identity={search_domain}&output=json");
+        debug!("Querying {}", url);
 
         let response = self.client.get(&url).send().await?;
         if response.status() != 200 {
@@ -202,6 +203,7 @@ impl CtApi for CertSpotterApi {
     async fn get_certs_for_epoch(&self, epoch_id: u64) -> Result<Vec<CtCert>, GetCertsError> {
         let search_domain = format!("epoch.{epoch_id}.{KT_VERSION}.{KT_BASE_DOMAIN}");
         let url = format!("https://api.certspotter.com/v1/issuances?domain={search_domain}&expand=dns_names&expand=cert_der");
+        debug!("Querying {}", url);
 
         let response = self.client.get(&url).send().await?;
         if response.status() != 200 {

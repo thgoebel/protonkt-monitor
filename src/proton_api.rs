@@ -1,3 +1,4 @@
+use log::debug;
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -32,11 +33,11 @@ pub struct KtEpochResponse {
 /// Errors that can occur during network calls to the ProtonApi.
 #[derive(Debug, Error)]
 pub enum ProtonApiError {
-    #[error("network request failed to create a response")]
+    #[error("network request failed to create a response: {0}")]
     NetworkError(#[from] reqwest::Error),
     #[error("got a response but status code was {0}")]
     RequestNotSuccessful(reqwest::StatusCode),
-    #[error("failed to deserialise the response")]
+    #[error("failed to deserialise the response: {0}")]
     Deserialize(#[from] serde_json::Error),
 }
 
@@ -49,6 +50,7 @@ impl ProtonApi {
 
     pub async fn get_epoch(&self, epoch_id: u64) -> Result<KtEpochResponse, ProtonApiError> {
         let url = format!("{}kt/v1/epochs/{}", BASE_URL, epoch_id);
+        debug!("Querying {}", url);
         let response = self.client.get(url).send().await?;
 
         if response.status() != 200 {
