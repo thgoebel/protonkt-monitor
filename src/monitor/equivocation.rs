@@ -65,7 +65,8 @@ where
         let mut empty_count: usize = 0;
 
         loop {
-            let short_domain = ShortDomain::new(current_epoch, KT_VERSION);
+            let short_domain =
+                ShortDomain::new(current_epoch, data.config.kt_version, &data.config.base_url);
             info!(
                 "Checking {} \t (previous epoch was at {}) ...",
                 &short_domain.string_repr, current_not_before

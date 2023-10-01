@@ -19,8 +19,8 @@ pub struct ShortDomain {
 }
 
 impl ShortDomain {
-    pub fn new(epoch_id: u64, kt_version: u8) -> ShortDomain {
-        let string_repr = format!("epoch.{}.{}.{KT_BASE_DOMAIN}", epoch_id, kt_version);
+    pub fn new(epoch_id: u64, kt_version: u8, base_domain: &str) -> ShortDomain {
+        let string_repr = format!("epoch.{epoch_id}.{kt_version}.{base_domain}");
         ShortDomain {
             epoch_id,
             kt_version,
@@ -307,7 +307,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn basic() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![
             GeneralName::DNSName("epoch.321.1.keytransparency.ch"),
             GeneralName::DNSName("a78f116c473f70399a9ec6bae84f2f84.e152ba803dd34b231ad9ccd389003f03.1691888383.321.1.keytransparency.ch"),
@@ -331,7 +331,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn duplicate_non_conflicting() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![
             GeneralName::DNSName("epoch.321.1.keytransparency.ch"),
             GeneralName::DNSName("a78f116c473f70399a9ec6bae84f2f84.e152ba803dd34b231ad9ccd389003f03.1691888383.321.1.keytransparency.ch"),
@@ -345,7 +345,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn empty() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![];
         let san = SubjectAlternativeName { general_names };
         let res = find_full_domain(&sd, &san);
@@ -355,7 +355,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn no_full_domain() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![GeneralName::DNSName("epoch.321.1.keytransparency.ch")];
         let san = SubjectAlternativeName { general_names };
         let res = find_full_domain(&sd, &san);
@@ -365,7 +365,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn conflicting_chainhash() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![
             GeneralName::DNSName("epoch.321.1.keytransparency.ch"),
             GeneralName::DNSName("a78f116c473f70399a9ec6bae84f2f84.e152ba803dd34b231ad9ccd389003f03.1691888383.321.1.keytransparency.ch"),
@@ -384,7 +384,7 @@ mod tests_find_full_domain {
     fn multiple_distinct_domains() {
         // Both ShortDomains should independently pass.
 
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![
             GeneralName::DNSName("epoch.321.1.keytransparency.ch"),
             GeneralName::DNSName("epoch.322.1.keytransparency.ch"),
@@ -406,7 +406,7 @@ mod tests_find_full_domain {
         assert_eq!(fd.issuance_time, 1691888383);
         assert_eq!(fd.chain_hash, chain_hash);
 
-        let sd = ShortDomain::new(322, 1);
+        let sd = ShortDomain::new(322, 1, KT_BASE_DOMAIN);
         let res = find_full_domain(&sd, &san);
 
         let chain_hash =
@@ -424,7 +424,7 @@ mod tests_find_full_domain {
 
     #[test]
     fn additional_full_domain_other_epoch() {
-        let sd = ShortDomain::new(321, 1);
+        let sd = ShortDomain::new(321, 1, KT_BASE_DOMAIN);
         let general_names = vec![
             GeneralName::DNSName("epoch.321.1.keytransparency.ch"),
             GeneralName::DNSName("a78f116c473f70399a9ec6bae84f2f84.e152ba803dd34b231ad9ccd389003f03.1691888383.321.1.keytransparency.ch"),
