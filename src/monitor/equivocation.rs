@@ -4,7 +4,6 @@ use crate::data::Data;
 use crate::proton_api::ProtonApi;
 use crate::utils::ToSha256Bytes;
 use crate::Sha256Bytes;
-use crate::KT_VERSION;
 use log::{error, info, warn};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
@@ -145,7 +144,7 @@ where
             };
 
             // Check correct chaining
-            let (_root_hash, chain_hash) = self
+            let (root_hash, chain_hash) = self
                 .check_hash_chaining(current_epoch, &prev_chain_hash, &fd.chain_hash)
                 .await?;
 
@@ -154,7 +153,9 @@ where
                 current_not_before = check_cert_issued_with_epoch(&cert, fd.issuance_time);
             }
 
-            // TODO: persist epoch data
+            // Persist epoch data
+            data.epochs.insert(fd, root_hash, prev_chain_hash);
+            // TODO: persist certificates
 
             // Continue to next epoch
             prev_chain_hash = chain_hash;
