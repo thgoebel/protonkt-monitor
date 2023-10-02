@@ -1,4 +1,4 @@
-use crate::ct_api::CrtShApi;
+use crate::ct_api::{CertSpotterApi, CrtShApi, CtApi};
 use clap::Parser;
 use itertools::Itertools;
 use log::{error, info};
@@ -35,9 +35,27 @@ struct Cli {
     #[arg(short = 'p', long, value_parser = validate_hash)]
     prev_chain_hash: Option<Sha256Bytes>,
 
+    #[command(flatten)]
+    ct_api: ArgCtApi,
+
     /// Enable verbose logging
     #[arg(short, long)]
     verbose: bool,
+}
+
+/// Which CT database to use.
+/// These are mutually exclusive. Currently only one CT API can be used per run of the monitor.
+/// To use multiple CT databases, run the monitor again and override the start epoch.
+#[derive(Debug, Default, Parser)]
+#[group(required = false, multiple = false)]
+struct ArgCtApi {
+    /// Use crt.sh as the CT database (default)
+    #[arg(long)]
+    crt_sh: bool,
+
+    /// Use CertSpotter as the CT database
+    #[arg(long)]
+    certspotter: bool,
 }
 
 fn validate_hash(s: &str) -> Result<Sha256Bytes, String> {
@@ -78,7 +96,14 @@ async fn main() -> ExitCode {
         hex::encode(prev_from_chain_hash)
     );
 
-    let ct_api = CrtShApi::new();
+    let ct_api: Box<dyn CtApi> = if args.ct_api.certspotter {
+        info!("Using CertSpotter");
+        Box::new(CertSpotterApi::new())
+    } else {
+        info!("Using crt.sh");
+        Box::new(CrtShApi::new())
+    };
+
     let monitor = monitor::equivocation::EquivocMonitor::new(ct_api);
     let res = monitor
         .run(&mut data, from_epoch, prev_from_chain_hash)
@@ -193,6 +218,7 @@ mod test_get_start_epoch {
             data_dir: data_dir.clone(),
             from_epoch,
             prev_chain_hash,
+            ct_api: ArgCtApi::default(),
             verbose: false,
         };
         let config = data::Config::default();

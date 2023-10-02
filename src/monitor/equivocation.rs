@@ -22,11 +22,8 @@ const EMPTY_THRESHOLD: usize = 5;
 ///
 /// It also checks that the tree root hashes are correctly chained across epochs.
 /// I.e. that `chain_hash = h(prev_chain_hash || root_hash)`.
-pub struct EquivocMonitor<T>
-where
-    T: CtApi,
-{
-    ct_api: T,
+pub struct EquivocMonitor {
+    ct_api: Box<dyn CtApi>,
     proton_api: ProtonApi,
 }
 
@@ -38,11 +35,8 @@ pub enum EquivocationError {
     ChainHashesDontMatch { computed: String, logged: String },
 }
 
-impl<T> EquivocMonitor<T>
-where
-    T: CtApi,
-{
-    pub fn new(ct_api: T) -> Self {
+impl EquivocMonitor {
+    pub fn new(ct_api: Box<dyn CtApi>) -> Self {
         EquivocMonitor {
             ct_api,
             proton_api: ProtonApi::new(),
