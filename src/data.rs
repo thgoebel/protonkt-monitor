@@ -27,7 +27,7 @@ const CONFIG_FILE: &str = "config.json";
 const EPOCHS_FILE: &str = "epochs.json";
 
 /// Collection of all (important) data in the data dir
-#[derive(Default, Debug, Deserialize, Serialize)]
+#[derive(Default, Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Data {
     pub data_dir: PathBuf,
     pub config: Config,
@@ -38,7 +38,7 @@ pub struct Data {
 ///
 /// This is used to allow data dirs for different environments
 /// (different KT versions, different base urls).
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct Config {
     pub base_url: String,
     pub kt_version: u8,
@@ -54,14 +54,14 @@ impl Default for Config {
 }
 
 /// The `epochs.json`.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct EpochEvidence {
     /// A map from epoch ids to a list of evidence items
     pub epochs: HashMap<u64, Vec<EpochEvidenceItem>>,
 }
 
 #[serde_as]
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone, Copy)]
 pub struct EpochEvidenceItem {
     pub issuance_time: u64,
 
