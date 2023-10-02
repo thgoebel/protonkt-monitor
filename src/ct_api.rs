@@ -5,6 +5,7 @@ use crate::{DerBytes, KT_BASE_DOMAIN, KT_VERSION};
 use async_trait::async_trait;
 use base64::{engine::general_purpose as b64, Engine as _};
 use log::{debug, error};
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json;
 use thiserror::Error;
@@ -121,7 +122,7 @@ impl CtApi for CrtShApi {
             let url = format!("https://crt.sh/?d={}", item.id);
 
             let response = self.client.get(&url).send().await?;
-            if response.status() != 200 {
+            if response.status() != StatusCode::OK {
                 return Err(GetCertsError::RequestNotSuccessful(url, response.status()));
             }
             let pem = response.bytes().await?;
@@ -206,7 +207,10 @@ impl CtApi for CertSpotterApi {
         debug!("Querying {}", url);
 
         let response = self.client.get(&url).send().await?;
-        if response.status() != 200 {
+        if response.status() != StatusCode::OK {
+            if response.status() == StatusCode::TOO_MANY_REQUESTS {
+                error!("We have reached CertSpotter's free tier limit of 100 queries per hour. See https://sslmate.com/ct_search_api/. Please re-run in one hour.");
+            }
             return Err(GetCertsError::RequestNotSuccessful(url, response.status()));
         }
         let body = response.bytes().await?;
