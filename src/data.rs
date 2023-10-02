@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_with::serde_as;
 use std::{
-    collections::HashMap,
+    collections::BTreeMap,
     error::Error,
     fs::File,
     io::{BufReader, BufWriter},
@@ -57,7 +57,7 @@ impl Default for Config {
 #[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 pub struct EpochEvidence {
     /// A map from epoch ids to a list of evidence items
-    pub epochs: HashMap<u64, Vec<EpochEvidenceItem>>,
+    pub epochs: BTreeMap<u64, Vec<EpochEvidenceItem>>,
 }
 
 #[serde_as]
@@ -88,7 +88,10 @@ pub const DEFAULT_START_EPOCH_EVIDENCE_ITEM: EpochEvidenceItem = EpochEvidenceIt
 impl Default for EpochEvidence {
     fn default() -> Self {
         EpochEvidence {
-            epochs: HashMap::from([(DEFAULT_START_EPOCH, vec![DEFAULT_START_EPOCH_EVIDENCE_ITEM])]),
+            epochs: BTreeMap::from([(
+                DEFAULT_START_EPOCH,
+                vec![DEFAULT_START_EPOCH_EVIDENCE_ITEM],
+            )]),
         }
     }
 }
