@@ -31,6 +31,7 @@ pub struct EquivocMonitor {
 pub enum EquivocationError {
     #[error("Conflicting FullDomains found in CT")]
     ConflictingFullDomainsFound,
+
     #[error("ChainHashes don't match")]
     ChainHashesDontMatch { computed: String, logged: String },
 }

@@ -16,6 +16,7 @@ pub trait ToSha256Bytes {
 pub enum ToSha256BytesError {
     #[error("failed to decode hex to bytes: {0}")]
     HashHex(#[from] hex::FromHexError),
+
     #[error("hash has an unexpected length ({0} bytes instead of 32)")]
     BadHashLength(usize),
 }

@@ -54,12 +54,16 @@ impl FullDomain {
 pub enum FullDomainParseError {
     #[error("NotEnoughParts")]
     NotEnoughParts,
+
     #[error("Probably a ShortDomain")]
     ProbablyShortDomain,
+
     #[error("BadChainHashLength: {0} (expected 64)")]
     BadChainHashLength(usize),
+
     #[error("Failed to decode chainhash as hex string")]
     HexDecodeFailed(#[from] FromHexError),
+
     #[error("Failed to parse an Int to String")]
     FromStringError(#[from] std::num::ParseIntError),
 }
@@ -106,6 +110,7 @@ impl FromStr for FullDomain {
 pub enum FindFullDomainError {
     #[error("No full domain found in SAN")]
     NotFound,
+
     #[error("Conflicting full domains. See the logs.")]
     ConflictingFullDomain,
 }

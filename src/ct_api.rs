@@ -56,16 +56,22 @@ pub trait CtApi {
 pub enum GetCertsError {
     #[error("network request failed to create a response: {0}")]
     NetworkError(#[from] reqwest::Error),
+
     #[error("got a response but status code was {1} for url {0}")]
     RequestNotSuccessful(String, reqwest::StatusCode),
+
     #[error("failed to deserialise the response: {0}")]
     Deserialize(#[from] serde_json::Error),
+
     #[error("API specific error: {0}")]
     ApiError(String),
+
     #[error("Base64 decode failed: {0}")]
     Base64DecodeError(#[from] base64::DecodeError),
+
     #[error("PEM decode failed: {0}")]
     PemDecodeError(#[from] pem_rfc7468::Error),
+
     #[error("X.509 decode failed: {0}")]
     X509DecodeError(#[from] X509Error),
 }
@@ -87,7 +93,6 @@ pub struct CrtShItem {
 }
 
 impl CrtShApi {
-    #[allow(unused)]
     pub fn new() -> CrtShApi {
         CrtShApi {
             client: reqwest::Client::new(),
@@ -191,7 +196,6 @@ struct CertSpotterError {
 }
 
 impl CertSpotterApi {
-    #[allow(unused)]
     pub fn new() -> CertSpotterApi {
         CertSpotterApi {
             client: reqwest::Client::new(),

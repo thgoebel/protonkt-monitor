@@ -35,8 +35,10 @@ pub struct KtEpochResponse {
 pub enum ProtonApiError {
     #[error("network request failed to create a response: {0}")]
     NetworkError(#[from] reqwest::Error),
+
     #[error("got a response but status code was {0}")]
     RequestNotSuccessful(reqwest::StatusCode),
+
     #[error("failed to deserialise the response: {0}")]
     Deserialize(#[from] serde_json::Error),
 }
